@@ -31,6 +31,6 @@ def f_score(y1,y2):
     for i in range(max_lab):
         p=correct[i]/cnt1[i] if cnt1[i] else 1
         r=correct[i]/cnt2[i] if cnt2[i] else 1
-        f=p*r/(p+r) if (p+r) else 0
+        f=2*p*r/(p+r) if (p+r) else 0
         ret+=f/max_lab
     return ret
