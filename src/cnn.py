@@ -8,7 +8,11 @@ import numpy as np;
 import os
 import json
 import random
-from progressbar import ProgressBar
+try:
+    from progressbar import ProgressBar
+    USING_BAR=True
+except:
+    USING_BAR=False
 
 class TextCnn(nn.Module):
     def __init__(self,args):
@@ -75,7 +79,11 @@ class CnnClassifier:
         running_acc=0.0
         n=len(x)
         epoch_size=self.epoch_size
-        for i in ProgressBar()(range(int(n/epoch_size))):
+        
+        _r=range(int(n/epoch_size))
+        if USING_BAR:
+            _r=ProgressBar()(_r)
+        for i in _r:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
@@ -99,7 +107,11 @@ class CnnClassifier:
         ret_y=[]
         n=len(x)
         epoch_size=self.epoch_size
-        for i in ProgressBar()(range(int(n/epoch_size))):
+        
+        _r=range(int(n/epoch_size))
+        if USING_BAR:
+            _r=ProgressBar()(_r)
+        for i in _r:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             output=self.cnn(batch_x)
