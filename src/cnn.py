@@ -50,7 +50,7 @@ class TextCnn(nn.Module):
         x=x.view(x.size(0),1,self.fixed_len,self.word_dim)
         x=self.conv1(x)
         x=self.conv2(x)
-        # x=self.conv3(x)
+        x=self.conv3(x)
         # x=self.conv4(x)
         x=x.view(x.size(0),-1)
         ret=self.out(x)
