@@ -17,9 +17,11 @@ def f_score(y1,y2):
     n=min(len(y1),len(y2))
     for i in range(n):
         max_lab=max(max_lab,max(y1[i],y2[i]))
+    max_lab+=1
     cnt1=[0 for i in range(max_lab)]
     cnt2=[0 for i in range(max_lab)]
     correct=[0 for i in range(max_lab)]
+    # print([cnt1,cnt2,correct])
     for i in range(n):
         cnt1[y1[i]]+=1
         cnt2[y2[i]]+=1
