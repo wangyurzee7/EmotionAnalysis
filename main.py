@@ -30,7 +30,7 @@ if __name__=='__main__':
         sys.stderr.write("Too Few Arguments!!.\n")
     train_file=sys.argv[1]
     test_file=sys.argv[2]
-    method=sys.argv[3] if len(sys.argv)<4 else "all"
+    method=sys.argv[3] if len(sys.argv)>=4 else "all"
     
     train_doc=read_data(train_file)
     random.shuffle(train_doc)
@@ -51,4 +51,11 @@ if __name__=='__main__':
         print("{ **CNN** }")
         model=Classifier(args,LR=0.0005,epoch_size=16,network="cnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
-    
+    if method=="all" or method=="rnn":
+        print("{ **RNN** }")
+        model=Classifier(args,LR=0.0005,epoch_size=16,network="rnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+    if method=="all" or method=="gru":
+        print("{ **GRU** }")
+        model=Classifier(args,LR=0.0005,epoch_size=16,network="gru")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)

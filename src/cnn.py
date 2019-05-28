@@ -65,11 +65,11 @@ class Mlp(nn.Module):
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         input_size=args['fixed_len']*args['word_dim']
         self.linear=nn.Sequential(
-                    nn.Linear(input_size,128),
+                    nn.Linear(input_size,256),
                     nn.ReLU(inplace=True),
-                    nn.Linear(128,32),
+                    nn.Linear(256,64),
                     nn.ReLU(inplace=True),
-                    nn.Linear(32,args['label_size'])
+                    nn.Linear(64,args['label_size'])
                     )
     def forward(self,x):
         x=self.embeding(x)
@@ -77,16 +77,45 @@ class Mlp(nn.Module):
         x=self.linear(x)
         return x
 
+class Rnn(nn.Module):
+    def __init__(self,args,using_gru=False):
+        super(Rnn,self).__init__()
+        self.fixed_len=args['fixed_len']
+        self.word_dim=args['word_dim']
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        
+        self.hidden_size=256
+        self.n_layers=2
+        
+        if using_gru:
+            self.rnn=nn.GRU(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
+        else:
+            self.rnn=nn.RNN(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
+        
+        self.out=nn.Linear(self.hidden_size,args['label_size'])
+    def forward(self,x):
+        x=self.embeding(x)
+        x=x.view(x.size(0),-1,self.word_dim)
+        initial_hid=torch.autograd.Variable(torch.zeros(self.n_layers,self.fixed_len,self.hidden_size))
+        x,hid=self.rnn(x,initial_hid)
+        x=self.out(x)
+        x=x[:,-1,:]
+        return x
+
 class Classifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
-    def __init__(self,cnn_args,LR=0.001,epoch_size=4,regression=True,network="mlp"):
+    def __init__(self,net_args,LR=0.001,epoch_size=4,regression=True,network="mlp"):
         self.net_name=network
         self.regression=regression
         self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if network=="cnn":
-            self.model=nn.DataParallel(Cnn(cnn_args))
+            self.model=nn.DataParallel(Cnn(net_args))
         elif network=="mlp":
-            self.model=nn.DataParallel(Mlp(cnn_args))
+            self.model=nn.DataParallel(Mlp(net_args))
+        elif network=="rnn":
+            self.model=nn.DataParallel(Rnn(net_args))
+        elif network=="gru":
+            self.model=nn.DataParallel(Rnn(net_args,using_gru=True))
         self.model.to(self.device)
         self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
         if regression:
