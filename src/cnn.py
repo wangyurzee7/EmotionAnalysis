@@ -114,10 +114,7 @@ class CnnClassifier:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             output=self.cnn(batch_x)
-            try: # Deal with output (regression)
-                ret_y.extend(output.cpu().numpy().tolist())
-            except:
-                ret_y.extend(output.detach().numpy().tolist())
+            ret_y.extend(output.cpu().detach().numpy().tolist()) # Deal with output (regression)
             # Deal with output (Classifier only)
             pred_y=torch.max(output,1)[1].data.squeeze()
             ret_z.extend(pred_y.cpu().numpy().tolist())
