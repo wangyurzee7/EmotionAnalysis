@@ -93,14 +93,15 @@ class Rnn(nn.Module):
             self.rnn=nn.RNN(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
         
         self.out=nn.Linear(self.hidden_size,args['label_size'])
-    def forward(self,x):
+    def forward(self,x,hid):
         x=self.embeding(x)
         x=x.view(x.size(0),-1,self.word_dim)
-        initial_hid=torch.autograd.Variable(torch.zeros(self.n_layers,self.fixed_len,self.hidden_size))
-        x,hid=self.rnn(x,initial_hid)
+        x,hid=self.rnn(x,hid)
         x=self.out(x)
         x=x[:,-1,:]
         return x
+    def initial_hid(self):
+        return torch.autograd.Variable(torch.zeros(self.n_layers,self.fixed_len,self.hidden_size))
 
 class Classifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
@@ -110,12 +111,20 @@ class Classifier:
         self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         if network=="cnn":
             self.model=nn.DataParallel(Cnn(net_args))
+            self.has_hid=False
         elif network=="mlp":
             self.model=nn.DataParallel(Mlp(net_args))
+            self.has_hid=False
         elif network=="rnn":
-            self.model=nn.DataParallel(Rnn(net_args))
+            self.model=Rnn(net_args)
+            self.initial_hid=self.model.initial_hid().to(self.device)
+            self.model=nn.DataParallel(self.model)
+            self.has_hid=True
         elif network=="gru":
-            self.model=nn.DataParallel(Rnn(net_args,using_gru=True))
+            self.model=Rnn(net_args,using_gru=True)
+            self.initial_hid=self.model.initial_hid().to(self.device)
+            self.model=nn.DataParallel(self.model)
+            self.has_hid=True
         self.model.to(self.device)
         self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
         if regression:
@@ -140,7 +149,10 @@ class Classifier:
             else:
                 batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
             self.optimizer.zero_grad()
-            output=self.model(batch_x)
+            if self.has_hid:
+                output=self.model(batch_x,self.initial_hid)
+            else:
+                output=self.model(batch_x)
             loss=self.loss_function(output,batch_y)
             loss.backward()
             self.optimizer.step()
@@ -167,7 +179,10 @@ class Classifier:
         for i in _r:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
-            output=self.model(batch_x)
+            if self.has_hid:
+                output=self.model(batch_x,self.initial_hid)
+            else:
+                output=self.model(batch_x)
             ret_y.extend(output.cpu().detach().numpy().tolist()) # Deal with output (regression)
             # Deal with output (Classifier only)
             pred_y=torch.max(output,1)[1].data.squeeze()
