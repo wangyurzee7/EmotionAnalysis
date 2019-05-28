@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 import json
-
+from scipy.stats import pearsonr
 
 def accuracy(y1,y2):
     n=min(len(y1),len(y2))
@@ -33,4 +33,11 @@ def f_score(y1,y2):
         r=correct[i]/cnt2[i] if cnt2[i] else 1
         f=2*p*r/(p+r) if (p+r) else 0
         ret+=f/max_lab
+    return ret
+
+def corr(y1,y2):
+    n=min(len(y1),len(y2))
+    ret=0.0
+    for i in range(n):
+        ret+=pearsonr(y1[i],y2[i])[0]/n
     return ret

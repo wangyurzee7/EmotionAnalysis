@@ -15,9 +15,9 @@ try:
 except:
     USING_BAR=False
 
-class TextCnn(nn.Module):
+class Cnn(nn.Module):
     def __init__(self,args):
-        super(TextCnn,self).__init__()
+        super(Cnn,self).__init__()
         self.fixed_len=args['fixed_len']
         self.word_dim=args['word_dim']
         
@@ -58,12 +58,16 @@ class TextCnn(nn.Module):
 
 class CnnClassifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
-    def __init__(self,cnn_args,LR=0.001,epoch_size=4):
+    def __init__(self,cnn_args,LR=0.001,epoch_size=4,regression=True):
+        self.regression=regression
         self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.cnn=nn.DataParallel(TextCnn(cnn_args))
+        self.cnn=nn.DataParallel(Cnn(cnn_args))
         self.cnn.to(self.device)
         self.optimizer=torch.optim.Adam(self.cnn.parameters(), lr=LR)
-        self.loss_function=nn.CrossEntropyLoss()
+        if regression:
+            self.loss_function=nn.MSELoss()
+        else:
+            self.loss_function=nn.CrossEntropyLoss()
         self.epoch_size=epoch_size
     def train(self,x,y):
         running_loss=0.0
@@ -77,7 +81,10 @@ class CnnClassifier:
         for i in _r:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
-            batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
+            if self.regression:
+                batch_y=Variable(torch.Tensor(y[l:r])).to(self.device)
+            else:
+                batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
             self.optimizer.zero_grad()
             output=self.cnn(batch_x)
             loss=self.loss_function(output,batch_y)
@@ -86,12 +93,17 @@ class CnnClassifier:
             running_loss+=loss.item()
             # Calculate accuracy
             pred_y=torch.max(output,1)[1].data.squeeze()
-            acc=(batch_y==pred_y)
+            if self.regression:
+                result_y=torch.max(batch_y,1)[1].data.squeeze()
+            else:
+                result_y=batch_y
+            acc=(result_y==pred_y)
             acc=acc.cpu().numpy().sum()
             running_acc+=acc
         return {"loss":running_loss/(i+1),"accuracy":running_acc/n}
     def test(self,x):
         ret_y=[]
+        ret_z=[]
         n=len(x)
         epoch_size=self.epoch_size
         
@@ -102,14 +114,19 @@ class CnnClassifier:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             output=self.cnn(batch_x)
-            # Deal with output
+            ret_y.extend(output.detach().numpy().tolist()) # Deal with output (regression)
+            # Deal with output (Classifier only)
             pred_y=torch.max(output,1)[1].data.squeeze()
-            ret_y.extend(pred_y.cpu().numpy().tolist())
-        return ret_y
-    def train_and_test(self,train_x,train_y,test_x,test_y,epoch=3):
+            ret_z.extend(pred_y.cpu().numpy().tolist())
+        return ret_y,ret_z
+    def train_and_test(self,train_x,train_y,test_x,test_y,test_z,epoch=3):
         for i in range(epoch):
+            print("[ Epoch#{} ]".format(i+1))
             info=self.train(train_x,train_y)
             print(info)
-            pred_y=self.test(test_x)
-            print("Acc = {} ;  F-Score = {}".format(accuracy(pred_y,test_y),f_score(pred_y,test_y)))
+            pred_y,pred_z=self.test(test_x)
+            print("Acc = {}".format(accuracy(pred_z,test_z)))
+            print("F-Score = {}".format(f_score(pred_z,test_z)))
+            print("Coef = {}".format(corr(pred_y,test_y)))
+            print("")
         return self.test(test_x)

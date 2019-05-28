@@ -40,16 +40,17 @@ if __name__=='__main__':
     emb.train(train_doc)
     
     if method=="all" or method=="cnn":
-        train_x,train_y,train_z=emb.get_embedding(train_doc,fixed_len=256)
+        fixed_length=256
+        train_x,train_y,train_z=emb.get_embedding(train_doc,fixed_len=fixed_length)
         # with open("fuck","w") as f:
             # f.write(str(train_x[0]))
             # f.write('\n')
             # f.write(str(list(map(lambda x:emb.embedding_matrix[x],train_x[0]))))
         # exit()
-        test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=256)
-        args={"fixed_len":256,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
+        test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=fixed_length)
+        args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
         # print(train_y[0:4])
         print("[ CNN ]")
-        model=CnnClassifier(args,LR=0.001,epoch_size=8)
-        model.train_and_test(train_x,train_z,test_x,test_z,epoch=10)
+        model=CnnClassifier(args,LR=0.0001,epoch_size=128)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=10)
         
