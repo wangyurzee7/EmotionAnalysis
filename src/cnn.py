@@ -65,11 +65,11 @@ class Mlp(nn.Module):
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         input_size=args['fixed_len']*args['word_dim']
         self.linear=nn.Sequential(
-                    nn.Linear(input_size,input_size//16),
+                    nn.Linear(input_size,128),
                     nn.ReLU(inplace=True),
-                    nn.Linear(input_size//16,input_size//256),
+                    nn.Linear(128,32),
                     nn.ReLU(inplace=True),
-                    nn.Linear(input_size//256,args['label_size'])
+                    nn.Linear(32,args['label_size'])
                     )
     def forward(self,x):
         x=self.embeding(x)
