@@ -8,6 +8,7 @@ import numpy as np;
 import os
 import json
 import random
+from src.scorer import *
 try:
     from progressbar import ProgressBar
     USING_BAR=True
@@ -65,15 +66,6 @@ class CnnClassifier:
         self.loss_function=nn.CrossEntropyLoss()
         self.epoch_size=epoch_size
     def train(self,x,y):
-        tmp_y=[]
-        for i in y:
-            index=0
-            for j in range(1,len(i)):
-                if i[j]>i[index]:
-                    index=j
-            # index=random.randint(0,6)
-            tmp_y.append(index)
-        y=tmp_y
         running_loss=0.0
         running_acc=0.0
         n=len(x)
@@ -97,10 +89,6 @@ class CnnClassifier:
             acc=(batch_y==pred_y)
             acc=acc.cpu().numpy().sum()
             running_acc+=acc
-            # if i%10==0:
-                # print(output)
-                # print(pred_y)
-                # print(batch_y)
         return {"loss":running_loss/(i+1),"accuracy":running_acc/n}
     def test(self,x):
         ret_y=[]
@@ -115,12 +103,13 @@ class CnnClassifier:
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             output=self.cnn(batch_x)
             # Deal with output
-            pred_y=output.cpu().numpy()
-            pred_y=pred_y/pred_y.sum()
-            ret_y.append(pred_y.tolist())
+            pred_y=torch.max(output,1)[1].data.squeeze()
+            ret_y.append(pred_y.cpu().numpy().tolist())
         return ret_y
-    def train_and_test(self,train_x,train_y,test_x,epoch=3):
+    def train_and_test(self,train_x,train_y,test_x,test_y,epoch=3):
         for i in range(epoch):
             info=self.train(train_x,train_y)
             print(info)
+            pred_y=self.test(test_x)
+            print("Acc = {} ;  F-Score = {}".format(accuracy(pred_y,test_y),f_score(pred_y,test_y)))
         return self.test(test_x)

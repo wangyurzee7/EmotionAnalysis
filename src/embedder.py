@@ -79,7 +79,9 @@ class Embedder:
             sys.stdout.write("Invalid method!!")
         
         y=[]
+        z=[]
         for doc in docs:
+            # Deal with y
             cur_sum=0
             cur_label=[0 for i in range(self.label_size)]
             for lbl in doc["label"]:
@@ -88,4 +90,10 @@ class Embedder:
                     cur_label[self.label2id[lbl]]=doc["label"][lbl]
             cur_label=list(map(lambda x:x/cur_sum,cur_label))
             y.append(cur_label)
-        return x,y
+            # Deal with z
+            index=0
+            for j in range(1,self.label_size):
+                if cur_label[j]>cur_label[index]:
+                    index=j
+            z.append(index)
+        return x,y,z
