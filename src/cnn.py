@@ -43,7 +43,7 @@ class TextCnn(nn.Module):
                     # )
         final_n=args['fixed_len']//4
         final_m=args['word_dim']//4
-        self.out=nn.Linear(final_n*final_m*128,args['label_size'])
+        self.out=nn.Linear(final_n*final_m*32,args['label_size'])
     def forward(self,x):
         x=self.embeding(x)
         x=x.view(x.size(0),1,self.fixed_len,self.word_dim)
