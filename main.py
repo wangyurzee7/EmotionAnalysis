@@ -51,6 +51,6 @@ if __name__=='__main__':
         args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
         # print(train_y[0:4])
         print("[ CNN ]")
-        model=CnnClassifier(args,LR=0.0001,epoch_size=128)
+        model=CnnClassifier(args,LR=0.0005,epoch_size=128)
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=10)
         
