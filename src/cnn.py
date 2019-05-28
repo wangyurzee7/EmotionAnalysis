@@ -37,21 +37,21 @@ class TextCnn(nn.Module):
                     nn.ReLU(),
                     nn.MaxPool2d(kernel_size=2)
                     )
-        # self.conv4=nn.Sequential(
-                    # nn.Conv2d(in_channels=64,out_channels=128,kernel_size=5,stride=1,padding=2),
-                    # nn.ReLU(),
-                    # nn.MaxPool2d(kernel_size=2)
-                    # )
-        final_n=args['fixed_len']//8
-        final_m=args['word_dim']//8
-        self.out=nn.Linear(final_n*final_m*64,args['label_size'])
+        self.conv4=nn.Sequential(
+                    nn.Conv2d(in_channels=64,out_channels=128,kernel_size=5,stride=1,padding=2),
+                    nn.ReLU(),
+                    nn.MaxPool2d(kernel_size=2)
+                    )
+        final_n=args['fixed_len']//16
+        final_m=args['word_dim']//16
+        self.out=nn.Linear(final_n*final_m*128,args['label_size'])
     def forward(self,x):
         x=self.embeding(x)
         x=x.view(x.size(0),1,self.fixed_len,self.word_dim)
         x=self.conv1(x)
         x=self.conv2(x)
         x=self.conv3(x)
-        # x=self.conv4(x)
+        x=self.conv4(x)
         x=x.view(x.size(0),-1)
         ret=self.out(x)
         return ret
