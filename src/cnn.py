@@ -67,7 +67,7 @@ class Mlp(nn.Module):
         self.linear=nn.Sequential(
                     nn.Linear(input_size,input_size//16),
                     nn.ReLU(inplace=True),
-                    nn.Linear(input_size,input_size//256),
+                    nn.Linear(input_size//16,input_size//256),
                     nn.ReLU(inplace=True),
                     nn.Linear(input_size//256,args['label_size'])
                     )
