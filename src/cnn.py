@@ -56,14 +56,37 @@ class Cnn(nn.Module):
         ret=self.out(x)
         return ret
 
-class CnnClassifier:
+
+class Mlp(nn.Module):
+    def __init__(self,args):
+        super(Mlp,self).__init__()
+        self.fixed_len=args['fixed_len']
+        self.word_dim=args['word_dim']
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        input_size=args['fixed_len']*args['word_dim']
+        self.linear=nn.Sequential(
+                    nn.Linear(input_size,input_size//4),
+                    nn.ReLU(inplace=True),
+                    nn.Linear(input_size//4,args['label_size'])
+                    )
+    def forward(self,x):
+        x=self.embeding(x)
+        x=x.view(x.size(0),-1)
+        x=self.linear(x)
+        return x
+
+class Classifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
-    def __init__(self,cnn_args,LR=0.001,epoch_size=4,regression=True):
+    def __init__(self,cnn_args,LR=0.001,epoch_size=4,regression=True,network="mlp"):
+        self.net_name=network
         self.regression=regression
         self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.cnn=nn.DataParallel(Cnn(cnn_args))
-        self.cnn.to(self.device)
-        self.optimizer=torch.optim.Adam(self.cnn.parameters(), lr=LR)
+        if network=="cnn":
+            self.model=nn.DataParallel(Cnn(cnn_args))
+        elif network=="mlp":
+            self.model=nn.DataParallel(Mlp(cnn_args))
+        self.model.to(self.device)
+        self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
         if regression:
             self.loss_function=nn.MSELoss()
         else:
@@ -86,7 +109,7 @@ class CnnClassifier:
             else:
                 batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
             self.optimizer.zero_grad()
-            output=self.cnn(batch_x)
+            output=self.model(batch_x)
             loss=self.loss_function(output,batch_y)
             loss.backward()
             self.optimizer.step()
@@ -113,7 +136,7 @@ class CnnClassifier:
         for i in _r:
             l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
-            output=self.cnn(batch_x)
+            output=self.model(batch_x)
             ret_y.extend(output.cpu().detach().numpy().tolist()) # Deal with output (regression)
             # Deal with output (Classifier only)
             pred_y=torch.max(output,1)[1].data.squeeze()

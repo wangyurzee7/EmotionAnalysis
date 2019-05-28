@@ -39,18 +39,16 @@ if __name__=='__main__':
     emb=Embedder()
     emb.train(train_doc)
     
-    if method=="all" or method=="cnn":
-        fixed_length=256
-        train_x,train_y,train_z=emb.get_embedding(train_doc,fixed_len=fixed_length)
-        # with open("fuck","w") as f:
-            # f.write(str(train_x[0]))
-            # f.write('\n')
-            # f.write(str(list(map(lambda x:emb.embedding_matrix[x],train_x[0]))))
-        # exit()
-        test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=fixed_length)
-        args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
-        # print(train_y[0:4])
-        print("[ CNN ]")
-        model=CnnClassifier(args,LR=0.0005,epoch_size=16)
+    fixed_length=256
+    train_x,train_y,train_z=emb.get_embedding(train_doc,fixed_len=fixed_length)
+    test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=fixed_length)
+    args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
+    if method=="all" or method=="mlp":
+        print("{ **MLP** }")
+        model=Classifier(args,LR=0.0005,epoch_size=16,network="mlp")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
-        
+    if method=="all" or method=="cnn":
+        print("{ **CNN** }")
+        model=Classifier(args,LR=0.0005,epoch_size=16,network="cnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+    
