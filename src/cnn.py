@@ -104,7 +104,7 @@ class CnnClassifier:
             output=self.cnn(batch_x)
             # Deal with output
             pred_y=torch.max(output,1)[1].data.squeeze()
-            ret_y.append(pred_y.cpu().numpy().tolist())
+            ret_y.extend(pred_y.cpu().numpy().tolist())
         return ret_y
     def train_and_test(self,train_x,train_y,test_x,test_y,epoch=3):
         for i in range(epoch):
