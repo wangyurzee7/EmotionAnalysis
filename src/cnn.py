@@ -68,7 +68,7 @@ class TextCnn(nn.Module):
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         
         kernels=[2,3,4,5]
-        oc=2
+        oc=16
         self.convs=nn.ModuleList([nn.Conv2d(in_channels=1,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
         
         # self.dropout=nn.Dropout()

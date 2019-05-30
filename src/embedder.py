@@ -37,7 +37,7 @@ class Embedder:
             json.dump(tmp,f)
     
     def load(self,file_name):
-        with open(file_name,"w") as f:
+        with open(file_name,"r") as f:
             tmp=json.load(f)
         self.word_dim=tmp["word_dim"]
         self.labels=tmp["labels"]
