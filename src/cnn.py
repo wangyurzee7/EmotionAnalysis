@@ -215,7 +215,7 @@ class Classifier:
             print(info)
             pred_y,pred_z=self.test(test_x)
             print("Acc = {}".format(accuracy(pred_z,test_z)))
-            print("F-Score = {}".format(f_score(pred_z,test_z)))
+            print("Macro-F1 = {}".format(macro_f1(pred_z,test_z)))
             print("Coef = {}".format(corr(pred_y,test_y)))
             print("")
         return self.test(test_x)

@@ -3,6 +3,7 @@ import os
 import numpy as np
 import json
 from scipy.stats import pearsonr
+from sklearn.metrics import f1_score
 
 def accuracy(y1,y2):
     n=min(len(y1),len(y2))
@@ -12,6 +13,10 @@ def accuracy(y1,y2):
             acc+=1/n
     return acc
 
+def macro_f1(y1,y2):
+    return f1_score(y1,y2,average="macro")
+
+'''
 def f_score(y1,y2):
     max_lab=0
     n=min(len(y1),len(y2))
@@ -34,6 +39,7 @@ def f_score(y1,y2):
         f=2*p*r/(p+r) if (p+r) else 0
         ret+=f/max_lab
     return ret
+'''
 
 def corr(y1,y2):
     n=min(len(y1),len(y2))
