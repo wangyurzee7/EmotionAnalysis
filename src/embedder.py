@@ -47,6 +47,7 @@ class Embedder:
         self.vocab2id=tmp["vocab2id"]
         self.vocab_size=tmp["vocab_size"]
         self.embedding_matrix=np.array(tmp["embedding_matrix"])
+        self.trained=True
     
     # SAMPLE: docs=[{"text":["i","am","happy"],"label":{"happy":10,"sad":0,"normal":1}},...]
     def train(self,docs,model_file=None):
