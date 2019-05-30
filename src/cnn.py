@@ -190,7 +190,7 @@ class Classifier:
             pred_y_list=pred_y.cpu().numpy().tolist()
             try:
                 ret_z.extend(pred_y_list)
-            else:
+            except:
                 ret_z.append(pred_y_list)
         return ret_y,ret_z
     def train_and_test(self,train_x,train_y,test_x,test_y,test_z,epoch=3):
