@@ -24,28 +24,28 @@ class Cnn(nn.Module):
         
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         self.conv1=nn.Sequential(
-                    nn.Conv2d(in_channels=1,out_channels=16,kernel_size=5,stride=1,padding=2),
+                    nn.Conv2d(in_channels=1,out_channels=16,kernel_size=5,padding=2),
                     nn.ReLU(),
                     nn.MaxPool2d(kernel_size=2)
                     )
         self.conv2=nn.Sequential(
-                    nn.Conv2d(in_channels=16,out_channels=32,kernel_size=5,stride=1,padding=2),
+                    nn.Conv2d(in_channels=16,out_channels=32,kernel_size=5,padding=2),
                     nn.ReLU(),
                     nn.MaxPool2d(kernel_size=2)
                     )
         self.conv3=nn.Sequential(
-                    nn.Conv2d(in_channels=32,out_channels=64,kernel_size=5,stride=1,padding=2),
+                    nn.Conv2d(in_channels=32,out_channels=64,kernel_size=5,padding=2),
                     nn.ReLU(),
                     nn.MaxPool2d(kernel_size=2)
                     )
         self.conv4=nn.Sequential(
-                    nn.Conv2d(in_channels=64,out_channels=128,kernel_size=5,stride=1,padding=2),
+                    nn.Conv2d(in_channels=64,out_channels=128,kernel_size=5,padding=2),
                     nn.ReLU(),
                     nn.MaxPool2d(kernel_size=2)
                     )
         final_n=args['fixed_len']//16
         final_m=args['word_dim']//16
-        self.fc=nn.Linear(final_n*final_m*128,args['label_size'])
+        self.fc=nn.Linear(final_n*final_m*32,args['label_size'])
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
@@ -71,7 +71,7 @@ class TextCnn(nn.Module):
         oc=16
         self.convs=nn.ModuleList([nn.Conv2d(in_channels=1,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
         
-        # self.dropout=nn.Dropout()
+        self.dropout=nn.Dropout(0.5)
         self.fc=nn.Linear(oc*len(kernels),args['label_size'])
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
@@ -80,7 +80,7 @@ class TextCnn(nn.Module):
         x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
         x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
         x=torch.cat(x,1)
-        # x=self.dropout(x)
+        x=self.dropout(x)
         x=self.fc(x)
         x=self.softmax(x)
         return x
@@ -197,11 +197,11 @@ class Classifier:
             loss.backward()
             self.optimizer.step()
             running_loss+=loss.item()
-            '''
+            # '''
             print(output)
             print(batch_y)
             print(loss)
-            '''
+            # '''
             # Calculate accuracy
             pred_y=torch.max(output,1)[1].data.squeeze()
             if self.regression:

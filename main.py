@@ -31,7 +31,7 @@ if __name__=='__main__':
     train_file=sys.argv[1]
     test_file=sys.argv[2]
     method=sys.argv[3] if len(sys.argv)>=4 else "all"
-    emb_source=sys.argv[4] if len(sys.argv)>=5 else "train"
+    emb_source=sys.argv[4] if len(sys.argv)>=5 else "test"
     print(emb_source)
     
     train_doc=read_data(train_file)
@@ -64,8 +64,8 @@ if __name__=='__main__':
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="textcnn":
         print("{ **TextCNN** }")
-        model=Classifier(args,LR=0.0001,batch_size=4,network="textcnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
+        model=Classifier(args,LR=0.0002,batch_size=4,network="textcnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=50)
     
     if method in ["all","rnn","gru"]:
         train_x,train_y,train_z=emb.get_embedding(train_doc)
