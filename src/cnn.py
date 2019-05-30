@@ -92,14 +92,18 @@ class Rnn(nn.Module):
             self.rnn=nn.RNN(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
         
         self.fc=nn.Linear(self.hidden_size,args['label_size'])
-        self.softmax=nn.LogSoftmax(dim=1)
+        self.softmax=nn.Softmax(dim=1)
     def forward(self,x,hid):
         x=self.embeding(x)
         x=x.view(x.size(0),-1,self.word_dim)
         x,hid=self.rnn(x,hid)
         x=x[:,-1,:]
         x=self.fc(x)
+        print("After fc")
+        print(x)
         x=self.softmax(x)
+        print("After softmax")
+        print(x)
         return x
     def initial_hid(self,length):
         return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
