@@ -1,6 +1,7 @@
 #coding=utf-8
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.utils.data as Data
 import torchvision
@@ -58,6 +59,31 @@ class Cnn(nn.Module):
         x=self.softmax(x)
         return x
 
+class TextCnn(nn.Module):
+    def __init__(self,args):
+        super(TextCnn,self).__init__()
+        self.fixed_len=args['fixed_len']
+        self.word_dim=args['word_dim']
+        
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        
+        kernels=[2,3,4,5]
+        oc=2
+        self.convs=nn.ModuleList([nn.Conv2d(in_channels=1,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
+        
+        self.dropout=nn.Dropout()
+        self.fc=nn.Linear(oc*len(kernels),args['label_size'])
+        self.softmax=nn.Softmax(dim=1)
+    def forward(self,x):
+        x=self.embeding(x)
+        x=x.view(x.size(0),-1,self.fixed_len,self.word_dim)
+        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
+        x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
+        x=torch.cat(x,1)
+        x=self.dropout(x)
+        x=self.fc(x)
+        x=self.softmax(x)
+        return x
 
 class Mlp(nn.Module):
     def __init__(self,args):
@@ -121,6 +147,9 @@ class Classifier:
         if network=="cnn":
             self.model=nn.DataParallel(Cnn(net_args))
             self.has_hid=False
+        if network=="textcnn":
+            self.model=nn.DataParallel(TextCnn(net_args))
+            self.has_hid=False
         elif network=="mlp":
             self.model=nn.DataParallel(Mlp(net_args))
             self.has_hid=False
@@ -149,11 +178,11 @@ class Classifier:
         n=len(x)
         batch_size=self.batch_size
         
-        _r=range(int(n/batch_size))
+        _r=range((n-1)//batch_size+1)
         if USING_BAR:
             _r=ProgressBar()(_r)
         for i in _r:
-            l,r=i*batch_size,min(i*batch_size+batch_size,n)
+            l,r=i*batch_size,min((i+1)*batch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             if self.regression:
                 batch_y=Variable(torch.Tensor(y[l:r])).to(self.device)
@@ -189,11 +218,11 @@ class Classifier:
         n=len(x)
         batch_size=self.batch_size
         
-        _r=range(int(n/batch_size))
+        _r=range((n-1)//batch_size+1)
         if USING_BAR:
             _r=ProgressBar()(_r)
         for i in _r:
-            l,r=i*batch_size,min(i*batch_size+batch_size,n)
+            l,r=i*batch_size,min((i+1)*batch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             if self.has_hid:
                 output=self.model(batch_x,self.model.module.initial_hid(batch_x.size(1)).to(self.device))

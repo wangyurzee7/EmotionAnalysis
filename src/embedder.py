@@ -96,4 +96,5 @@ class Embedder:
                 if cur_label[j]>cur_label[index]:
                     index=j
             z.append(index)
+        assert(len(x)==len(y) and len(y)==len(z))
         return x,y,z
