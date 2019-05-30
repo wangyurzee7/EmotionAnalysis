@@ -197,11 +197,11 @@ class Classifier:
             loss.backward()
             self.optimizer.step()
             running_loss+=loss.item()
-            # '''
+            '''
             print(output)
             print(batch_y)
             print(loss)
-            # '''
+            '''
             # Calculate accuracy
             pred_y=torch.max(output,1)[1].data.squeeze()
             if self.regression:
