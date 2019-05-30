@@ -44,7 +44,8 @@ class Cnn(nn.Module):
                     )
         final_n=args['fixed_len']//16
         final_m=args['word_dim']//16
-        self.out=nn.Linear(final_n*final_m*128,args['label_size'])
+        self.fc=nn.Linear(final_n*final_m*128,args['label_size'])
+        self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
         x=x.view(x.size(0),1,self.fixed_len,self.word_dim)
@@ -53,8 +54,9 @@ class Cnn(nn.Module):
         x=self.conv3(x)
         x=self.conv4(x)
         x=x.view(x.size(0),-1)
-        ret=self.out(x)
-        return ret
+        x=self.fc(x)
+        x=self.softmax(x)
+        return x
 
 
 class Mlp(nn.Module):
@@ -71,10 +73,12 @@ class Mlp(nn.Module):
                     nn.ReLU(inplace=True),
                     nn.Linear(64,args['label_size'])
                     )
+        self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
         x=x.view(x.size(0),-1)
         x=self.linear(x)
+        x=self.softmax(x)
         return x
 
 class Rnn(nn.Module):
@@ -83,8 +87,8 @@ class Rnn(nn.Module):
         self.word_dim=args['word_dim']
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         
-        self.hidden_size=256
-        self.n_layers=8
+        self.hidden_size=128
+        self.n_layers=4
         
         if using_gru:
             self.rnn=nn.GRU(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
@@ -99,11 +103,11 @@ class Rnn(nn.Module):
         x,hid=self.rnn(x,hid)
         x=x[:,-1,:]
         x=self.fc(x)
-        print("After fc")
-        print(x)
+        # print("After fc")
+        # print(x)
         x=self.softmax(x)
-        print("After softmax")
-        print(x)
+        # print("After softmax")
+        # print(x)
         return x
     def initial_hid(self,length):
         return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
