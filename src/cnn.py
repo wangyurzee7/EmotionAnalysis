@@ -80,7 +80,6 @@ class Mlp(nn.Module):
 class Rnn(nn.Module):
     def __init__(self,args,using_gru=False):
         super(Rnn,self).__init__()
-        self.fixed_len=args['fixed_len']
         self.word_dim=args['word_dim']
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         
@@ -100,12 +99,12 @@ class Rnn(nn.Module):
         x=self.out(x)
         x=x[:,-1,:]
         return x
-    def initial_hid(self):
-        return torch.autograd.Variable(torch.zeros(self.n_layers,self.fixed_len,self.hidden_size))
+    def initial_hid(self,length):
+        return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
 
 class Classifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
-    def __init__(self,net_args,LR=0.001,epoch_size=4,regression=True,network="mlp"):
+    def __init__(self,net_args,LR=0.001,batch_size=4,regression=True,network="mlp"):
         self.net_name=network
         self.regression=regression
         self.device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -117,32 +116,34 @@ class Classifier:
             self.has_hid=False
         elif network=="rnn":
             self.model=Rnn(net_args)
-            self.initial_hid=self.model.initial_hid().to(self.device)
+            # self.initial_hid=self.model.initial_hid().to(self.device)
             self.model=nn.DataParallel(self.model)
             self.has_hid=True
+            assert(batch_size==1)
         elif network=="gru":
             self.model=Rnn(net_args,using_gru=True)
-            self.initial_hid=self.model.initial_hid().to(self.device)
+            # self.initial_hid=self.model.initial_hid().to(self.device)
             self.model=nn.DataParallel(self.model)
             self.has_hid=True
+            assert(batch_size==1)
         self.model.to(self.device)
         self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
         if regression:
             self.loss_function=nn.MSELoss()
         else:
             self.loss_function=nn.CrossEntropyLoss()
-        self.epoch_size=epoch_size
+        self.batch_size=batch_size
     def train(self,x,y):
         running_loss=0.0
         running_acc=0.0
         n=len(x)
-        epoch_size=self.epoch_size
+        batch_size=self.batch_size
         
-        _r=range(int(n/epoch_size))
+        _r=range(int(n/batch_size))
         if USING_BAR:
             _r=ProgressBar()(_r)
         for i in _r:
-            l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
+            l,r=i*batch_size,min(i*batch_size+batch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             if self.regression:
                 batch_y=Variable(torch.Tensor(y[l:r])).to(self.device)
@@ -150,7 +151,7 @@ class Classifier:
                 batch_y=Variable(torch.LongTensor(y[l:r])).to(self.device)
             self.optimizer.zero_grad()
             if self.has_hid:
-                output=self.model(batch_x,self.initial_hid)
+                output=self.model(batch_x,self.model.module.initial_hid(batch_x.size(1)).to(self.device))
             else:
                 output=self.model(batch_x)
             loss=self.loss_function(output,batch_y)
@@ -171,16 +172,16 @@ class Classifier:
         ret_y=[]
         ret_z=[]
         n=len(x)
-        epoch_size=self.epoch_size
+        batch_size=self.batch_size
         
-        _r=range(int(n/epoch_size))
+        _r=range(int(n/batch_size))
         if USING_BAR:
             _r=ProgressBar()(_r)
         for i in _r:
-            l,r=i*epoch_size,min(i*epoch_size+epoch_size,n)
+            l,r=i*batch_size,min(i*batch_size+batch_size,n)
             batch_x=Variable(torch.LongTensor(x[l:r])).to(self.device)
             if self.has_hid:
-                output=self.model(batch_x,self.initial_hid)
+                output=self.model(batch_x,self.model.module.initial_hid(batch_x.size(1)).to(self.device))
             else:
                 output=self.model(batch_x)
             ret_y.extend(output.cpu().detach().numpy().tolist()) # Deal with output (regression)

@@ -45,17 +45,21 @@ if __name__=='__main__':
     args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="mlp":
         print("{ **MLP** }")
-        model=Classifier(args,LR=0.0005,epoch_size=16,network="mlp")
+        model=Classifier(args,LR=0.0005,batch_size=16,network="mlp")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="cnn":
         print("{ **CNN** }")
-        model=Classifier(args,LR=0.0005,epoch_size=16,network="cnn")
+        model=Classifier(args,LR=0.0005,batch_size=16,network="cnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+    
+    train_x,train_y,train_z=emb.get_embedding(train_doc)
+    test_x,test_y,test_z=emb.get_embedding(test_doc)
+    args={"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="rnn":
         print("{ **RNN** }")
-        model=Classifier(args,LR=0.0005,epoch_size=16,network="rnn")
+        model=Classifier(args,LR=0.0005,batch_size=1,network="rnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="gru":
         print("{ **GRU** }")
-        model=Classifier(args,LR=0.0005,epoch_size=16,network="gru")
+        model=Classifier(args,LR=0.0005,batch_size=1,network="gru")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
