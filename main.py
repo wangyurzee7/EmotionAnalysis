@@ -56,15 +56,15 @@ if __name__=='__main__':
         args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="mlp":
         print("{ **MLP** }")
-        model=Classifier(args,LR=0.0005,batch_size=16,network="mlp")
+        model=Classifier(args,LR=0.0005,batch_size=8,network="mlp")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="cnn":
         print("{ **CNN** }")
-        model=Classifier(args,LR=0.0005,batch_size=16,network="cnn")
+        model=Classifier(args,LR=0.0005,batch_size=8,network="cnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="textcnn":
         print("{ **TextCNN** }")
-        model=Classifier(args,LR=0.0001,batch_size=16,network="textcnn")
+        model=Classifier(args,LR=0.0001,batch_size=4,network="textcnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     
     if method in ["all","rnn","gru"]:

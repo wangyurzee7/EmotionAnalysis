@@ -5,16 +5,27 @@ import json
 from scipy.stats import pearsonr
 from sklearn.metrics import f1_score
 
-def accuracy(y1,y2):
-    n=min(len(y1),len(y2))
+def get_z(z,y):
+    ret=[]
+    for i,lst in zip(z,y):
+        for j in range(len(lst)):
+            if lst[j]>lst[i]:
+                i=j
+        ret.append(i)
+    return ret
+
+def accuracy(z1,y2):
+    z2=get_z(z1,y2)
+    n=min(len(z1),len(z2))
     acc=0.0
     for i in range(n):
-        if y1[i]==y2[i]:
+        if z1[i]==z2[i]:
             acc+=1/n
     return acc
 
-def macro_f1(y1,y2):
-    return f1_score(y1,y2,average="macro")
+def macro_f1(z1,y2):
+    z2=get_z(z1,y2)
+    return f1_score(z1,z2,average="macro")
 
 '''
 def f_score(y1,y2):
