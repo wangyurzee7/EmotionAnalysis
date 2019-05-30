@@ -187,7 +187,11 @@ class Classifier:
             ret_y.extend(output.cpu().detach().numpy().tolist()) # Deal with output (regression)
             # Deal with output (Classifier only)
             pred_y=torch.max(output,1)[1].data.squeeze()
-            ret_z.extend(pred_y.cpu().numpy().tolist())
+            pred_y_list=pred_y.cpu().numpy().tolist()
+            try:
+                ret_z.extend(pred_y_list)
+            else:
+                ret_z.append(pred_y_list)
         return ret_y,ret_z
     def train_and_test(self,train_x,train_y,test_x,test_y,test_z,epoch=3):
         for i in range(epoch):
