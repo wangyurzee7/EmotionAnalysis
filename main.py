@@ -31,16 +31,25 @@ if __name__=='__main__':
     train_file=sys.argv[1]
     test_file=sys.argv[2]
     method=sys.argv[3] if len(sys.argv)>=4 else "all"
+    emb_source=sys.argv[4] if len(sys.argv)>=5 else "train"
     
     train_doc=read_data(train_file)
     random.shuffle(train_doc)
     test_doc=read_data(test_file)
     
-    emb=Embedder()
-    emb.train(train_doc)
+    if emb_source=="train":
+        emb=Embedder()
+        emb.train(train_doc+test_doc,model_file="data/sgns.sogounews.bigram-char")
+        emb.dump("emb.json")
+    elif emb_source=="load":
+        emb=Embedder()
+        emb.load("emb.json")
+    else:
+        emb=Embedder()
+        emb.train(train_doc)
     
     if method in ["all","mlp","cnn","textcnn"]:
-        fixed_length=256
+        fixed_length=512
         train_x,train_y,train_z=emb.get_embedding(train_doc,fixed_len=fixed_length)
         test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=fixed_length)
         args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
@@ -54,8 +63,8 @@ if __name__=='__main__':
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="textcnn":
         print("{ **TextCNN** }")
-        model=Classifier(args,LR=0.001,batch_size=16,network="textcnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+        model=Classifier(args,LR=0.0001,batch_size=16,network="textcnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     
     if method in ["all","rnn","gru"]:
         train_x,train_y,train_z=emb.get_embedding(train_doc)
@@ -64,8 +73,8 @@ if __name__=='__main__':
     if method=="all" or method=="rnn":
         print("{ **RNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="all" or method=="gru":
         print("{ **GRU** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)

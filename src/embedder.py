@@ -4,6 +4,7 @@ import os
 import gensim
 import numpy as np
 from gensim.models.word2vec import Word2Vec
+# from gensim.models import *
 import json
 
 class Embedder:
@@ -21,17 +22,46 @@ class Embedder:
         # self.vocab_size=None
         # self.embedding_matrix=None
     
+    def dump(self,file_name):
+        tmp={
+            "word_dim":self.word_dim,
+            "labels":self.labels,
+            "label2id":self.label2id,
+            "label_size":self.label_size,
+            "vocabs":self.vocabs,
+            "vocab2id":self.vocab2id,
+            "vocab_size":self.vocab_size,
+            "embedding_matrix":self.embedding_matrix.tolist()
+        }
+        with open(file_name,"w") as f:
+            json.dump(tmp,f)
+    
+    def load(self,file_name):
+        with open(file_name,"w") as f:
+            tmp=json.load(f)
+        self.word_dim=tmp["word_dim"]
+        self.labels=tmp["labels"]
+        self.label2id=tmp["label2id"]
+        self.label_size=tmp["label_size"]
+        self.vocabs=tmp["vocabs"]
+        self.vocab2id=tmp["vocab2id"]
+        self.vocab_size=tmp["vocab_size"]
+        self.embedding_matrix=np.array(tmp["embedding_matrix"])
+    
     # SAMPLE: docs=[{"text":["i","am","happy"],"label":{"happy":10,"sad":0,"normal":1}},...]
-    def train(self,docs):
+    def train(self,docs,model_file=None):
         self.trained=True
         docs=list(filter(lambda doc:len(doc["text"])>1,docs))
         
         if self.method=="word2vec":
             sentences=list(map(lambda x:x["text"],docs))
-            self.model=Word2Vec()
-            self.model.build_vocab(sentences)
-            self.model.train(sentences,total_examples=self.model.corpus_count,epochs=self.model.iter)
-            self.word_dim=100
+            if model_file:
+                self.model=gensim.models.KeyedVectors.load_word2vec_format(model_file,binary=False)
+            else:
+                self.model=Word2Vec()
+                self.model.build_vocab(sentences)
+                self.model.train(sentences,total_examples=self.model.corpus_count,epochs=self.model.iter)
+            self.word_dim=self.model.vector_size
             self.vocabs=list({v for s in sentences for v in s})
             self.vocab_size=len(self.vocabs)
             self.vocab2id={self.vocabs[id]:id for id in range(self.vocab_size)}
