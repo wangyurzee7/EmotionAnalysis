@@ -57,9 +57,9 @@ if __name__=='__main__':
     args={"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="rnn":
         print("{ **RNN** }")
-        model=Classifier(args,LR=0.0005,batch_size=1,network="rnn")
+        model=Classifier(args,LR=0.0001,batch_size=1,network="rnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="gru":
         print("{ **GRU** }")
-        model=Classifier(args,LR=0.0005,batch_size=1,network="gru")
+        model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)

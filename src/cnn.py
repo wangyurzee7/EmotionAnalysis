@@ -84,20 +84,22 @@ class Rnn(nn.Module):
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         
         self.hidden_size=256
-        self.n_layers=2
+        self.n_layers=8
         
         if using_gru:
             self.rnn=nn.GRU(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
         else:
             self.rnn=nn.RNN(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers)
         
-        self.out=nn.Linear(self.hidden_size,args['label_size'])
+        self.fc=nn.Linear(self.hidden_size,args['label_size'])
+        self.softmax=nn.LogSoftmax(dim=1)
     def forward(self,x,hid):
         x=self.embeding(x)
         x=x.view(x.size(0),-1,self.word_dim)
         x,hid=self.rnn(x,hid)
-        x=self.out(x)
         x=x[:,-1,:]
+        x=self.fc(x)
+        x=self.softmax(x)
         return x
     def initial_hid(self,length):
         return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
@@ -158,6 +160,11 @@ class Classifier:
             loss.backward()
             self.optimizer.step()
             running_loss+=loss.item()
+            '''
+            print(output)
+            print(batch_y)
+            print(loss)
+            '''
             # Calculate accuracy
             pred_y=torch.max(output,1)[1].data.squeeze()
             if self.regression:
