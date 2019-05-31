@@ -138,6 +138,60 @@ class Rnn(nn.Module):
     def initial_hid(self,length):
         return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
 
+class Lstm(nn.Module):
+    def __init__(self,args):
+        super(Lstm,self).__init__()
+        self.word_dim=args['word_dim']
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        
+        self.hidden_size=128
+        self.n_layers=8
+        
+        self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,bidirectional=True)
+        
+        self.out=nn.Sequential(nn.Linear(self.hidden_size,args['label_size']),nn.Softmax(dim=1))
+        # self.softmax=nn.Softmax(dim=1)
+    def forward(self,x,hid):
+        x=self.embeding(x)
+        x=x.view(x.size(0),-1,self.word_dim)
+        x,hid=self.lstm(x)
+        x=x[:,-1,:]
+        x=self.out(x)
+        return x
+    def initial_hid(self,length):
+        return torch.autograd.Variable(torch.zeros(self.n_layers,length,self.hidden_size))
+
+class Rcnn(nn.Module):
+    def __init__(self,args,using_gru=False):
+        super(Rcnn,self).__init__()
+        self.word_dim=args['word_dim']
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        
+        assert(self.word_dim%2==0)
+        self.hidden_size=self.word_dim//2
+        self.n_layers=4
+        
+        self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,batch_first=True,bidirectional=True)
+        
+        kernels=[2,3,4,5]
+        oc=16
+        self.convs=nn.ModuleList([nn.Conv2d(in_channels=2,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
+        
+        self.fc=nn.Linear(oc*len(kernels),args['label_size'])
+        self.softmax=nn.Softmax(dim=1)
+    def forward(self,x):
+        x=self.embeding(x)
+        x=x.view(1,-1,self.word_dim)
+        y,_=self.lstm(x,None) # [1,len,dim]
+        x=torch.cat([x,y],0).view(1,2,-1,self.word_dim) # [1,2,len,dim]
+        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
+        x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
+        x=torch.cat(x,1)
+        
+        x=self.fc(x)
+        x=self.softmax(x)
+        return x
+
 class Classifier:
     # `cnn_args` should countain key: fixed_len,vocab_size,word_dim,label_size,embedding_matrix
     def __init__(self,net_args,LR=0.001,batch_size=4,regression=True,network="mlp"):
@@ -155,16 +209,22 @@ class Classifier:
             self.has_hid=False
         elif network=="rnn":
             self.model=Rnn(net_args)
-            # self.initial_hid=self.model.initial_hid().to(self.device)
             self.model=nn.DataParallel(self.model)
             self.has_hid=True
             assert(batch_size==1)
         elif network=="gru":
             self.model=Rnn(net_args,using_gru=True)
-            # self.initial_hid=self.model.initial_hid().to(self.device)
             self.model=nn.DataParallel(self.model)
             self.has_hid=True
             assert(batch_size==1)
+        elif network=="lstm":
+            self.model=Lstm(net_args)
+            self.model=nn.DataParallel(self.model)
+            self.has_hid=True
+            assert(batch_size==1)
+        elif network=="rcnn":
+            self.model=nn.DataParallel(Rcnn(net_args))
+            self.has_hid=False
         self.model.to(self.device)
         self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
         if regression:

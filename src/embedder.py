@@ -6,6 +6,7 @@ import numpy as np
 from gensim.models.word2vec import Word2Vec
 # from gensim.models import *
 import json
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Embedder:
     def __init__(self,method="word2vec"):
@@ -76,6 +77,9 @@ class Embedder:
                     vec=self.model[self.vocabs[i]]
                     if vec is not None:
                         self.embedding_matrix[i]=vec
+        elif self.method=="tf-idf":
+            self.vectorizer=TfidfVectorizer(min_df=2,max_df=1.0,token_pattern='\\b\\w+\\b')
+            self.vectorizer.fit(map(lambda doc:' '.join(doc["text"]),docs))
         else:
             sys.stdout.write("Invalid method!!")
         
@@ -106,6 +110,10 @@ class Embedder:
                     else:
                         cur_sen.append(self.vocab2id[""])
                 x.append(cur_sen)
+        elif self.method=="tf-idf":
+            x=self.vectorizer.transform(map(lambda doc:' '.join(doc["text"]),docs))
+            # with open("fuck","w") as f:
+                # f.write(str(x[0:10]))
         else:
             sys.stdout.write("Invalid method!!")
         
@@ -127,5 +135,5 @@ class Embedder:
                 if cur_label[j]>cur_label[index]:
                     index=j
             z.append(index)
-        assert(len(x)==len(y) and len(y)==len(z))
+        # assert(len(x)==len(y) and len(y)==len(z))
         return x,y,z

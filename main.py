@@ -5,6 +5,7 @@ import numpy as np
 import json
 from src.cnn import *
 from src.embedder import *
+from src.svm import *
 import random
 
 def read_data(file_name):
@@ -38,6 +39,18 @@ if __name__=='__main__':
     random.shuffle(train_doc)
     test_doc=read_data(test_file)
     
+    # SVM
+    if method=="svm":
+        print("{ **SVM** }")
+        emb_tfidf=Embedder(method="tf-idf")
+        emb_tfidf.train(train_doc)
+        train_x,_,train_y=emb_tfidf.get_embedding(train_doc)
+        test_x,test_y,_=emb_tfidf.get_embedding(test_doc)
+        svm=Svm()
+        svm.train_and_test(train_x,train_y,test_x,test_y)
+        exit()
+    # SVM
+    
     if emb_source=="train":
         emb=Embedder()
         emb.train(train_doc+test_doc,model_file="data/sgns.sogounews.bigram-char")
@@ -67,7 +80,7 @@ if __name__=='__main__':
         model=Classifier(args,LR=0.0002,batch_size=4,network="textcnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=50)
     
-    if method in ["all","rnn","gru"]:
+    if method in ["all","rnn","gru","lstm","rcnn"]:
         train_x,train_y,train_z=emb.get_embedding(train_doc)
         test_x,test_y,test_z=emb.get_embedding(test_doc)
         args={"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
@@ -79,3 +92,11 @@ if __name__=='__main__':
         print("{ **GRU** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
+    if method=="all" or method=="lstm":
+        print("{ **LSTM** }")
+        model=Classifier(args,LR=0.0001,batch_size=1,network="lstm")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
+    if method=="all" or method=="rcnn":
+        print("{ **RCNN** }")
+        model=Classifier(args,LR=0.0002,batch_size=1,network="rcnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=60)
