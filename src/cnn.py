@@ -167,28 +167,25 @@ class Rcnn(nn.Module):
         self.word_dim=args['word_dim']
         self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
         
-        assert(self.word_dim%2==0)
-        self.hidden_size=self.word_dim//2
+        self.hidden_size=128
         self.n_layers=4
+        self.dropout=0.5
         
-        self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,batch_first=True,bidirectional=True)
+        self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,batch_first=True,bidirectional=True,dropout=self.dropout)
+        self.fc1=nn.Linear(2*self.hidden_size+self.word_dim,self.hidden_size)
         
-        kernels=[2,3,4,5]
-        oc=16
-        self.convs=nn.ModuleList([nn.Conv2d(in_channels=2,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
-        
-        self.fc=nn.Linear(oc*len(kernels),args['label_size'])
+        self.fc2=nn.Linear(self.hidden_size,args['label_size'])
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
-        x=x.view(1,-1,self.word_dim)
-        y,_=self.lstm(x,None) # [1,len,dim]
-        x=torch.cat([x,y],0).view(1,2,-1,self.word_dim) # [1,2,len,dim]
-        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
-        x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
-        x=torch.cat(x,1)
-        
-        x=self.fc(x)
+        x=x.view(1,-1,self.word_dim) # [1,len,word_dim)
+        y,_=self.lstm(x,None) # [1,len,2*hidden_size]
+        x=torch.cat([x,y],2)
+        x=self.fc1(x) # [1,len,hidden_size]
+        x=x.permute(0,2,1) # [1,hidden_size,len]
+        x=F.max_pool1d(x,x.size()[2]) # [1,hidden_size,1]
+        x=x.squeeze(2)
+        x=self.fc2(x)
         x=self.softmax(x)
         return x
 
