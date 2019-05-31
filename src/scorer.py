@@ -25,7 +25,7 @@ def accuracy(z1,y2):
 
 def macro_f1(z1,y2):
     z2=get_z(z1,y2)
-    return f1_score(z1,z2,average="macro")
+    return f1_score(z2,z1,average="macro")
 
 '''
 def f_score(y1,y2):

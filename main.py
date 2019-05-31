@@ -57,7 +57,7 @@ if __name__=='__main__':
     if method=="all" or method=="mlp":
         print("{ **MLP** }")
         model=Classifier(args,LR=0.0005,batch_size=8,network="mlp")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=5)
     if method=="all" or method=="cnn":
         print("{ **CNN** }")
         model=Classifier(args,LR=0.0005,batch_size=8,network="cnn")

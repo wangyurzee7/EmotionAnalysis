@@ -46,7 +46,7 @@ class Cnn(nn.Module):
         final_n=args['fixed_len']//16
         final_m=args['word_dim']//16
         self.fc=nn.Linear(final_n*final_m*128,args['label_size'])
-        self.softmax=nn.Softmax(dim=1)
+        # self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
         x=x.view(x.size(0),1,self.fixed_len,self.word_dim)
@@ -56,7 +56,7 @@ class Cnn(nn.Module):
         x=self.conv4(x)
         x=x.view(x.size(0),-1)
         x=self.fc(x)
-        x=self.softmax(x)
+        # x=self.softmax(x)
         return x
 
 class TextCnn(nn.Module):
@@ -71,7 +71,7 @@ class TextCnn(nn.Module):
         oc=16
         self.convs=nn.ModuleList([nn.Conv2d(in_channels=1,out_channels=oc,kernel_size=(k,self.word_dim)) for k in kernels])
         
-        self.dropout=nn.Dropout(0.5)
+        # self.dropout=nn.Dropout(0.5)
         self.fc=nn.Linear(oc*len(kernels),args['label_size'])
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
@@ -80,7 +80,7 @@ class TextCnn(nn.Module):
         x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
         x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
         x=torch.cat(x,1)
-        x=self.dropout(x)
+        # x=self.dropout(x)
         x=self.fc(x)
         x=self.softmax(x)
         return x
