@@ -45,7 +45,7 @@ class Cnn(nn.Module):
                     )
         final_n=args['fixed_len']//16
         final_m=args['word_dim']//16
-        self.fc=nn.Linear(final_n*final_m*32,args['label_size'])
+        self.fc=nn.Linear(final_n*final_m*128,args['label_size'])
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
