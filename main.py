@@ -11,7 +11,7 @@ import random
 def _p(buf):
     print(buf)
     with open("result.log.txt","a") as f:
-        f.write(buf+'\n')
+        f.write(str(buf)+'\n')
 
 def read_data(file_name):
     ret=[]

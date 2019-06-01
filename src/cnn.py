@@ -19,7 +19,7 @@ except:
 def _p(buf):
     print(buf)
     with open("result.log.txt","a") as f:
-        f.write(buf+'\n')
+        f.write(str(buf)+'\n')
 
 class Cnn(nn.Module):
     def __init__(self,args):
