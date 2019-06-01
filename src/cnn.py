@@ -169,7 +169,7 @@ class Rcnn(nn.Module):
         
         self.hidden_size=128
         self.n_layers=4
-        self.dropout=0.5
+        self.dropout=0.1
         
         self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,batch_first=True,bidirectional=True,dropout=self.dropout)
         self.fc1=nn.Linear(2*self.hidden_size+self.word_dim,self.hidden_size)

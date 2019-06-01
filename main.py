@@ -13,17 +13,15 @@ def read_data(file_name):
     with open(file_name,"r") as f:
         lines=f.readlines()
         for line in lines:
-            arr=line.split(" ")
-            n=len(arr)
+            _,tags,content=line.split("\t")
+            tags=tags.split(" ")
+            content=content.split(" ")
             label={}
-            for i in range(1,n):
-                try:
-                    tag,w=arr[i].split(":")
-                    if int(w):
-                        label[tag]=int(w)
-                except:
-                    break
-            ret.append({"text":arr[i+1:],"label":label})
+            for buf in tags[1:]:
+                tag,w=buf.split(":")
+                if int(w):
+                    label[tag]=int(w)
+            ret.append({"text":content,"label":label})
     return ret
 
 if __name__=='__main__':
@@ -88,15 +86,15 @@ if __name__=='__main__':
         print("{ **RNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
-    if method=="all" or method=="gru":
+    if method=="gru": # ignored
         print("{ **GRU** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
-    if method=="all" or method=="lstm":
+    if method=="lstm": # ignored
         print("{ **LSTM** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="lstm")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="all" or method=="rcnn":
         print("{ **RCNN** }")
-        model=Classifier(args,LR=0.0002,batch_size=1,network="rcnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=60)
+        model=Classifier(args,LR=0.0001,batch_size=1,network="rcnn")
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=40)
