@@ -8,6 +8,11 @@ from src.embedder import *
 from src.svm import *
 import random
 
+def _p(buf):
+    print(buf)
+    with open("result.log.txt","a") as f:
+        f.write(buf+'\n')
+
 def read_data(file_name):
     ret=[]
     with open(file_name,"r") as f:
@@ -39,7 +44,7 @@ if __name__=='__main__':
     
     # SVM
     if method=="svm":
-        print("{ **SVM** }")
+        _p("{ **SVM** }")
         emb_tfidf=Embedder(method="tf-idf")
         emb_tfidf.train(train_doc)
         train_x,_,train_y=emb_tfidf.get_embedding(train_doc)
@@ -66,15 +71,15 @@ if __name__=='__main__':
         test_x,test_y,test_z=emb.get_embedding(test_doc,fixed_len=fixed_length)
         args={"fixed_len":fixed_length,"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="mlp":
-        print("{ **MLP** }")
+        _p("{ **MLP** }")
         model=Classifier(args,LR=0.0005,batch_size=8,network="mlp")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=5)
     if method=="all" or method=="cnn":
-        print("{ **CNN** }")
+        _p("{ **CNN** }")
         model=Classifier(args,LR=0.0005,batch_size=8,network="cnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=30)
     if method=="all" or method=="textcnn":
-        print("{ **TextCNN** }")
+        _p("{ **TextCNN** }")
         model=Classifier(args,LR=0.0002,batch_size=4,network="textcnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=50)
     
@@ -83,18 +88,18 @@ if __name__=='__main__':
         test_x,test_y,test_z=emb.get_embedding(test_doc)
         args={"vocab_size":emb.vocab_size,"word_dim":emb.word_dim,"label_size":emb.label_size,"embedding_matrix":emb.embedding_matrix}
     if method=="all" or method=="rnn":
-        print("{ **RNN** }")
+        _p("{ **RNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="gru": # ignored
-        print("{ **GRU** }")
+        _p("{ **GRU** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="lstm": # ignored
-        print("{ **LSTM** }")
+        _p("{ **LSTM** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="lstm")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="all" or method=="rcnn":
-        print("{ **RCNN** }")
+        _p("{ **RCNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rcnn")
         model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=40)

@@ -16,6 +16,11 @@ try:
 except:
     USING_BAR=False
 
+def _p(buf):
+    print(buf)
+    with open("result.log.txt","a") as f:
+        f.write(buf+'\n')
+
 class Cnn(nn.Module):
     def __init__(self,args):
         super(Cnn,self).__init__()
@@ -296,12 +301,12 @@ class Classifier:
         return ret_y,ret_z
     def train_and_test(self,train_x,train_y,test_x,test_y,test_z,epoch=3):
         for i in range(epoch):
-            print("[ Epoch#{} ]".format(i+1))
+            _p("[ Epoch#{} ]".format(i+1))
             info=self.train(train_x,train_y)
-            print(info)
+            _p(info)
             pred_y,pred_z=self.test(test_x)
-            print("Acc = {}".format(accuracy(pred_z,test_y)))
-            print("Macro-F1 = {}".format(macro_f1(pred_z,test_y)))
-            print("Coef = {}".format(corr(pred_y,test_y)))
-            print("")
+            _p("Acc = {}".format(accuracy(pred_z,test_y)))
+            _p("Macro-F1 = {}".format(macro_f1(pred_z,test_y)))
+            _p("Coef = {}".format(corr(pred_y,test_y)))
+            _p("")
         return self.test(test_x)
