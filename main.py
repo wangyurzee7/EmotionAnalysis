@@ -3,7 +3,7 @@ import os
 import sys
 import numpy as np
 import json
-from src.cnn import *
+from src.models import *
 from src.embedder import *
 from src.svm import *
 import random
@@ -90,7 +90,7 @@ if __name__=='__main__':
     if method=="all" or method=="rnn":
         _p("{ **RNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=60)
     if method=="gru": # ignored
         _p("{ **GRU** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="gru")
@@ -102,4 +102,4 @@ if __name__=='__main__':
     if method=="all" or method=="rcnn":
         _p("{ **RCNN** }")
         model=Classifier(args,LR=0.0001,batch_size=1,network="rcnn")
-        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=40)
+        model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=15)
