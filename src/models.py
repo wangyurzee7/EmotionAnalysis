@@ -81,9 +81,9 @@ class TextCnn(nn.Module):
         self.softmax=nn.Softmax(dim=1)
     def forward(self,x):
         x=self.embeding(x)
-        x=x.view(x.size(0),-1,self.fixed_len,self.word_dim)
-        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]
-        x=[F.max_pool1d(c,c.size(2)).squeeze(2) for c in x]
+        x=x.view(x.size(0),-1,self.fixed_len,self.word_dim) # [batch,1,len,dim]
+        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs] # [[batch,16,len],...]
+        x=[F.max_pool1d(c,int(c.size(2))).squeeze(2) for c in x] # [[batch,16],...]
         x=torch.cat(x,1)
         # x=self.dropout(x)
         x=self.fc(x)
@@ -188,10 +188,50 @@ class Rcnn(nn.Module):
         x=torch.cat([x,y],2)
         x=self.fc1(x) # [1,len,hidden_size]
         x=x.permute(0,2,1) # [1,hidden_size,len]
-        x=F.max_pool1d(x,x.size()[2]) # [1,hidden_size,1]
+        x=F.max_pool1d(x,int(x.size()[2])) # [1,hidden_size,1]
         x=x.squeeze(2)
         x=self.fc2(x)
         x=self.softmax(x)
+        return x
+
+class Clstm(nn.Module):
+    def __init__(self,args):
+        super(Clstm,self).__init__()
+        self.word_dim=args['word_dim']
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        
+        kernels=[2,4,6,8]
+        oc=16
+        self.hidden_size=len(kernels)*oc
+        self.dropout=0.5
+        self.embeding=nn.Embedding(args['vocab_size'],args['word_dim'],_weight=torch.Tensor(args['embedding_matrix']))
+        # CNN
+        self.convs=nn.ModuleList([nn.Conv2d(in_channels=1,out_channels=oc,kernel_size=(k,self.word_dim),stride=1,padding=(k//2,0)) for k in kernels])
+        # LSTM
+        self.n_layers=8
+        self.lstm=nn.LSTM(input_size=self.hidden_size,hidden_size=self.hidden_size,num_layers= self.n_layers,dropout=self.dropout,bidirectional=True)
+        # linear
+        self.fc=nn.Linear(self.hidden_size*2,args['label_size'])
+        # dropout
+        self.dropout=nn.Dropout(self.dropout)
+
+    def forward(self, x):
+        x=self.embeding(x)
+        # CNN
+        x=self.dropout(x)
+        x=x.unsqueeze(1)
+        x=[F.relu(conv(x)).squeeze(3) for conv in self.convs]  # [[batch,16,len],...]
+        x=torch.cat(x,1)
+        x=torch.transpose(x,1,2)
+        # LSTM
+        x,_= self.lstm(x)
+        # operation1
+        # x=torch.transpose(x, 1, 2)
+        # x=F.max_pool1d(x, x.size(2)).squeeze(2)
+        # operation2
+        x=x[:,-1,:]
+        # linear
+        x=self.fc(torch.tanh(x))
         return x
 
 class Classifier:
@@ -226,6 +266,9 @@ class Classifier:
             assert(batch_size==1)
         elif network=="rcnn":
             self.model=nn.DataParallel(Rcnn(net_args))
+            self.has_hid=False
+        elif network=="clstm":
+            self.model=nn.DataParallel(Clstm(net_args))
             self.has_hid=False
         self.model.to(self.device)
         self.optimizer=torch.optim.Adam(self.model.parameters(), lr=LR)
@@ -299,6 +342,15 @@ class Classifier:
             except:
                 ret_z.append(pred_y_list)
         return ret_y,ret_z
+    def draw(self,x):
+        from tensorboardX import SummaryWriter
+        with SummaryWriter(comment=self.net_name) as w:
+            batch_x=Variable(torch.LongTensor(x[0:1])).to(self.device)
+            if self.has_hid:
+                hid=self.model.module.initial_hid(batch_x.size(1)).to(self.device)
+                w.add_graph(self.model, (batch_x,hid, ))
+            else:
+                w.add_graph(self.model, (batch_x, ))
     def train_and_test(self,train_x,train_y,test_x,test_y,test_z,epoch=3):
         for i in range(epoch):
             _p("[ Epoch#{} ]".format(i+1))
