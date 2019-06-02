@@ -119,7 +119,7 @@ if __name__=='__main__':
             model.train_and_test(train_x,train_y,test_x,test_y,test_z,epoch=100)
     if method=="all" or method=="rcnn":
         _p("{ **RCNN** }")
-        model=Classifier(args,LR=0.0001,batch_size=1,network="rcnn")
+        model=Classifier(args,LR=0.0002,batch_size=1,network="rcnn")
         if mode=="draw":
             model.draw(train_x)
         else:

@@ -174,7 +174,7 @@ class Rcnn(nn.Module):
         
         self.hidden_size=128
         self.n_layers=4
-        self.dropout=0.1
+        self.dropout=0.8
         
         self.lstm=nn.LSTM(input_size=args['word_dim'],hidden_size=self.hidden_size,num_layers=self.n_layers,batch_first=True,bidirectional=True,dropout=self.dropout)
         self.fc1=nn.Linear(2*self.hidden_size+self.word_dim,self.hidden_size)
@@ -212,6 +212,7 @@ class Clstm(nn.Module):
         self.lstm=nn.LSTM(input_size=self.hidden_size,hidden_size=self.hidden_size,num_layers= self.n_layers,dropout=self.dropout,bidirectional=True)
         # linear
         self.fc=nn.Linear(self.hidden_size*2,args['label_size'])
+        self.softmax=nn.Softmax(dim=1)
         # dropout
         self.dropout=nn.Dropout(self.dropout)
 
@@ -226,12 +227,13 @@ class Clstm(nn.Module):
         # LSTM
         x,_= self.lstm(x)
         # operation1
-        # x=torch.transpose(x, 1, 2)
-        # x=F.max_pool1d(x, x.size(2)).squeeze(2)
+        x=torch.transpose(x, 1, 2)
+        x=F.max_pool1d(x, x.size(2)).squeeze(2)
         # operation2
-        x=x[:,-1,:]
+        # x=x[:,-1,:]
         # linear
         x=self.fc(torch.tanh(x))
+        x=self.softmax(x)
         return x
 
 class Classifier:
